@@ -1,0 +1,98 @@
+export const LAWS = {
+  progressive_tax: {
+    name: 'Прогрессивное налогообложение',
+    desc: 'Повышенные ставки для состоятельных граждан. Больше доходов, меньше довольных элит.',
+    category: 'economy', cost: 22, excludes: ['flat_tax'],
+    mods: { taxMult: 0.12, growthBonus: -0.2, inequalityDrift: -0.004 },
+  },
+  flat_tax: {
+    name: 'Плоская шкала налогообложения',
+    desc: 'Единая ставка стимулирует инвестиции, но усиливает неравенство.',
+    category: 'economy', cost: 22, excludes: ['progressive_tax'],
+    mods: { taxMult: -0.06, growthBonus: 0.35, inequalityDrift: 0.005 },
+  },
+  anti_corruption: {
+    name: 'Антикоррупционная реформа',
+    desc: 'Независимые органы, декларации, конфискация. Снижает коррупцию.',
+    category: 'institutions', cost: 30,
+    mods: { corruptionDrift: -0.0045, approvalBonus: 2, growthBonus: 0.15 },
+  },
+  judicial_reform: {
+    name: 'Судебная реформа',
+    desc: 'Независимость судов, защита прав собственности.',
+    category: 'institutions', cost: 28,
+    mods: { corruptionDrift: -0.003, stabilityBonus: 2, growthBonus: 0.2 },
+  },
+  press_freedom: {
+    name: 'Свобода прессы',
+    desc: 'Независимые СМИ. Растёт доверие, но и критика власти.',
+    category: 'rights', cost: 20, excludes: ['media_control'],
+    mods: { pressFreedomDrift: 0.006, approvalBonus: 3, stabilityBonus: -1 },
+  },
+  media_control: {
+    name: 'Государственный контроль СМИ',
+    desc: 'Управляемая информационная повестка. Стабильность ценой доверия.',
+    category: 'rights', cost: 20, excludes: ['press_freedom'],
+    mods: { pressFreedomDrift: -0.009, stabilityBonus: 3, approvalBonus: -2, corruptionDrift: 0.001 },
+  },
+  civil_rights: {
+    name: 'Расширение гражданских прав',
+    desc: 'Свобода собраний, права меньшинств, защита от произвола.',
+    category: 'rights', cost: 24,
+    mods: { approvalBonus: 2, stabilityBonus: 1, pressFreedomDrift: 0.003, growthBonus: 0.1 },
+  },
+  universal_healthcare: {
+    name: 'Всеобщее здравоохранение',
+    desc: 'Бесплатная базовая медицина для всех граждан.',
+    category: 'social', cost: 26,
+    mods: { healthBonus: 0.7, spendMult: 0.03, approvalBonus: 3 },
+  },
+  education_reform: {
+    name: 'Реформа образования',
+    desc: 'Модернизация школ и вузов, рост человеческого капитала.',
+    category: 'social', cost: 26,
+    mods: { eduBonus: 0.7, spendMult: 0.03, growthBonus: 0.3 },
+  },
+  minimum_wage: {
+    name: 'Минимальная зарплата',
+    desc: 'Защита доходов работников, но нагрузка на бизнес.',
+    category: 'social', cost: 18,
+    mods: { approvalBonus: 3, unemploymentBonus: 1.3, growthBonus: -0.2, inequalityDrift: -0.003 },
+  },
+  labor_flexibility: {
+    name: 'Гибкий рынок труда',
+    desc: 'Упрощённое увольнение и срочные контракты. Снижает безработицу, злит профсоюзы.',
+    category: 'economy', cost: 18,
+    mods: { growthBonus: 0.4, unemploymentBonus: -1.4, approvalBonus: -2 },
+  },
+  privatization: {
+    name: 'Приватизация',
+    desc: 'Продажа госпредприятий частному сектору. Разовый доход, выше эффективность.',
+    category: 'economy', cost: 24, excludes: ['nationalization'],
+    mods: { growthBonus: 0.45, taxMult: -0.04, approvalBonus: -3 },
+  },
+  nationalization: {
+    name: 'Национализация стратегических отраслей',
+    desc: 'Государство забирает ключевые компании. Доходы в бюджет, меньше инвестиций.',
+    category: 'economy', cost: 24, excludes: ['privatization'],
+    mods: { taxMult: 0.06, growthBonus: -0.4, approvalBonus: 2 },
+  },
+  decentralization: {
+    name: 'Децентрализация',
+    desc: 'Передача полномочий регионам, федерализм.',
+    category: 'institutions', cost: 22,
+    mods: { stabilityBonus: 2, corruptionDrift: -0.002, taxMult: -0.03, growthBonus: 0.15 },
+  },
+  green_energy: {
+    name: 'Зелёная энергетика',
+    desc: 'Инвестиции в ВИЭ: дороже сейчас, стабильнее завтра.',
+    category: 'economy', cost: 20,
+    mods: { growthBonus: 0.2, spendMult: 0.02, approvalBonus: 1, inflationPressure: -0.4 },
+  },
+  military_buildup: {
+    name: 'Наращивание оборонного бюджета',
+    desc: 'Перевооружение и рост армии.',
+    category: 'military', cost: 20,
+    mods: { militaryBonus: 1, spendMult: 0.02, approvalBonus: 1, stabilityBonus: -1 },
+  },
+};
