@@ -16,7 +16,37 @@ export function budget(c, mods) {
   return { revenue, expenditure, interest, balance: revenue - expenditure, spendRate, compliance };
 }
 
-export function tickEconomy(c, rng, mods) {
+/* ---------- Бонус к росту от регионов (ресурсы + инфраструктура) ---------- */
+const RESOURCE_GROWTH = {
+  'нефть':      0.50,
+  'газ':        0.40,
+  'уголь':      0.30,
+  'железо':     0.30,
+  'золото':     0.20,
+  'лес':        0.20,
+  'рыба':       0.15,
+  'зерно':      0.25,
+  'виноград':   0.15,
+  'уран':       0.60,
+  'редкозем':   0.70,
+  'вода':       0.10,
+};
+
+export function regionGrowthBonus(game, countryId) {
+  if (!game?.world?.regions) return 0;
+  let bonus = 0;
+  for (const r of game.world.regions) {
+    if (r.countryId !== countryId) continue;
+    if (r.resource && RESOURCE_GROWTH[r.resource]) {
+      bonus += RESOURCE_GROWTH[r.resource] * (r.richness || 0.5) * 0.4;
+    }
+    bonus += (r.infrastructure || 0) * 0.15;
+  }
+  // ограничиваем, чтобы не улететь в космос
+  return Math.min(bonus, 3.0);
+}
+
+export function tickEconomy(c, rng, mods = {}, game = null) {
   const e = c.economy, g = c.government, d = c.demography;
   const b = budget(c, mods);
   e.revenue = b.revenue;
@@ -43,8 +73,12 @@ export function tickEconomy(c, rng, mods) {
   const debtPenalty = clamp((e.debtRatio - 0.7) * 2.2, 0, 4);
   const inflPenalty = clamp((e.inflation - 6) * 0.10, 0, 2.5);
   const catchUp = clamp((30000 - e.gdpPerCapita) / 30000 * 4, 0, 4);
+  const resourceBonus = regionGrowthBonus(game, c.id);
+
   const potential = 0.3 + human * 1.7 + inst * 1.4 + (e.techLevel - 5) * 0.22 + catchUp
-    + (mods.growthBonus || 0) - debtPenalty - inflPenalty - g.corruption * 0.7;
+    + (mods.growthBonus || 0) + resourceBonus
+    - debtPenalty - inflPenalty - g.corruption * 0.7;
+
   const growth = clamp(potential + rng.gauss(0, 0.9), -14, 14);
   e.growth = growth;
   e.gdp = Math.max(1, e.gdp * (1 + growth / 100));

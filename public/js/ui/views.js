@@ -5,6 +5,7 @@ import { budget, taxBurden } from '../game/economy.js';
 import { hdi, democracyIndex, rankings } from '../game/stats.js';
 import { ROLES, holdElection } from '../game/politics.js';
 import { computeInfluence } from '../game/diplomacy.js';
+import { createMapView } from './mapView.js';
 
 /* ----------------------------- Обзор ----------------------------- */
 export function viewDashboard(g, app) {
@@ -328,6 +329,14 @@ export function viewMilitary(g, app) {
         `Договоры: ${m.treaties.length ? m.treaties.join(', ') : 'нет'}`)));
 }
 
+/* -------------------------------- Карта -------------------------------- */
+export function viewMap(g, app) {
+  return h('div', {},
+    h('p', { style: { color: 'var(--muted)', marginTop: 0 } },
+      'Интерактивная карта мира. Клик по региону — панель управления.'),
+    createMapView(g, app));
+}
+
 /* -------------------------------- Мир -------------------------------- */
 export function viewWorld(g, app) {
   const keys = [
@@ -421,6 +430,7 @@ export const VIEWS = {
   society: viewSociety,
   diplomacy: viewDiplomacy,
   military: viewMilitary,
+  map: viewMap,
   world: viewWorld,
   statistics: viewStatistics,
 };

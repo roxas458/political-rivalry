@@ -20,7 +20,7 @@ export function tick(game) {
   advanceDate(game);
 
   tickSociety(c, rng, mods, game);
-  tickEconomy(c, rng, mods);
+  tickEconomy(c, rng, mods, game); // ← передаём game для бонуса от регионов
   tickPolitics(game, c, rng, mods);
   tickDiplomacy(game, rng);
 

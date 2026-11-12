@@ -1,6 +1,7 @@
 import { Rng } from '../core/rng.js';
 import { clamp } from '../core/util.js';
 import { person, partyName, countryName, cityName, EMBLEMS, rnd } from './names.js';
+import { generateWorld, distributePopulation } from './map.js';
 
 export const SIZES = {
   small:  { label: 'Малое государство',   pop: 8e6,   gdp: 140 },
@@ -17,13 +18,13 @@ export const SYSTEMS = {
 };
 
 export const IDEOLOGIES = {
-  liberal:      { label: 'Либеральная',    econFreedom: 0.78, social: 0.70, base: 22 },
-  socialdemocrat:{ label: 'Социал-демократическая', econFreedom: 0.52, social: 0.68, base: 20 },
-  socialist:    { label: 'Социалистическая', econFreedom: 0.30, social: 0.45, base: 16 },
-  centrist:     { label: 'Центристская',   econFreedom: 0.62, social: 0.55, base: 18 },
-  technocratic: { label: 'Технократическая', econFreedom: 0.66, social: 0.50, base: 12 },
-  conservative: { label: 'Консервативная', econFreedom: 0.70, social: 0.40, base: 18 },
-  nationalist:  { label: 'Националистическая', econFreedom: 0.50, social: 0.25, base: 14 },
+  liberal:       { label: 'Либеральная',                econFreedom: 0.78, social: 0.70, base: 22 },
+  socialdemocrat:{ label: 'Социал-демократическая',     econFreedom: 0.52, social: 0.68, base: 20 },
+  socialist:     { label: 'Социалистическая',           econFreedom: 0.30, social: 0.45, base: 16 },
+  centrist:      { label: 'Центристская',               econFreedom: 0.62, social: 0.55, base: 18 },
+  technocratic:  { label: 'Технократическая',           econFreedom: 0.66, social: 0.50, base: 12 },
+  conservative:  { label: 'Консервативная',             econFreedom: 0.70, social: 0.40, base: 18 },
+  nationalist:   { label: 'Националистическая',         econFreedom: 0.50, social: 0.25, base: 14 },
 };
 
 export const DIFFICULTY = {
@@ -40,10 +41,19 @@ export function createGame(cfg) {
     version: 1, rngState: rng.s, date: { year: 2025, month: 1 },
     countries: [], playerId: 0, log: [], history: [], pendingEvent: null,
     worldAvgGdpPerCapita: 12000, turnCount: 0,
+    world: null,
   };
 
   game.countries.push(createPlayerCountry(cfg, rng));
   for (let i = 0; i < 11; i++) game.countries.push(createAICountry(rng, i + 1));
+
+  // --- Карта мира: генерируем регионы и распределяем население ---
+  game.world = generateWorld(rng, {
+    width: 1600,
+    height: 900,
+    countryCount: game.countries.length,
+  });
+  distributePopulation(game.world, game.countries);
 
   const player = game.countries[0];
   for (const o of game.countries) {
@@ -70,16 +80,18 @@ function createPlayerCountry(cfg, rng) {
   const parties = PARTY_IDEOLOGIES.map((id, i) => {
     const isRuling = id === cfg.ideology;
     return {
-      id: `p${i}`, name: isRuling ? (cfg.partyName || partyName(rng)) : partyName(rng),
+      id: `p${i}`,
+      name: isRuling ? (cfg.partyName || partyName(rng)) : partyName(rng),
       ideology: id,
       support: isRuling ? rng.range(24, 34) : rng.range(5, 16),
       base: isRuling ? (IDEOLOGIES[id]?.base ?? 18) + 6 : (IDEOLOGIES[id]?.base ?? 16) * rng.range(0.5, 1.2),
-      seats: 0, inGovernment: isRuling,
+      seats: 0,
+      inGovernment: isRuling,
     };
   });
   const totalSupport = parties.reduce((a, p) => a + p.support, 0);
   parties.forEach(p => { p.support = (p.support / totalSupport) * 100; });
-  const rulingParty = parties.find(p => p.ideology === cfg.ideology);
+  const rulingParty = parties.find(p => p.ideology === cfg.ideology) || parties[0];
 
   const president = person(rng);
   const ministers = {};
@@ -94,11 +106,15 @@ function createPlayerCountry(cfg, rng) {
     flag: { colors: cfg.flagColors || ['#2b6cb0','#e2e8f0','#c53030'], emblem: cfg.emblem || '★' },
     development: clamp(gdpPerCapita / 45000, 0.05, 1.3),
 
+    // ⚠️ ВАЖНО: parties на верхнем уровне — используется politics.js и views.js
+    parties,
+
     government: {
-      system: cfg.system, ideology: cfg.ideology,
+      system: cfg.system,
+      ideology: cfg.ideology,
       president: { ...president, partyId: rulingParty.id, since: { year: 2025, month: 1 } },
       ministers,
-      parties,
+      parties,                                    // дублируем для совместимости
       parliament: { total: 450, seats: {} },
       rulingPartyId: rulingParty.id,
       coalition: [rulingParty.id],
@@ -143,9 +159,18 @@ function createPlayerCountry(cfg, rng) {
       lifeExpectancy: clamp(62 + gdpPerCapita / 2500, 45, 88),
       religiosity: rng.range(0.35, 0.75),
       ageStructure: { youth: 24, working: 60, elderly: 16 },
-      ethnicComposition: [{ name: 'Титульная нация', share: 0.74 }, { name: 'Нацменьшинства', share: 0.26 }],
-      education: { index: clamp(35 + gdpPerCapita / 900, 10, 95), literacy: 92, schools: 0, universities: 0, teachers: 0 },
-      health: { index: clamp(32 + gdpPerCapita / 950, 10, 95), hospitals: 0, doctors: 0, access: 60 },
+      ethnicComposition: [
+        { name: 'Титульная нация', share: 0.74 },
+        { name: 'Нацменьшинства', share: 0.26 },
+      ],
+      education: {
+        index: clamp(35 + gdpPerCapita / 900, 10, 95),
+        literacy: 92, schools: 0, universities: 0, teachers: 0,
+      },
+      health: {
+        index: clamp(32 + gdpPerCapita / 950, 10, 95),
+        hospitals: 0, doctors: 0, access: 60,
+      },
       crimeRate: 30,
     },
 
@@ -167,8 +192,12 @@ function createPlayerCountry(cfg, rng) {
     },
 
     diplomacy: {
-      relations: {}, reputation: 50, influence: 0,
-      agreements: [], sanctions: [], organizations: ['ООН'],
+      relations: {},
+      reputation: 50,
+      influence: 0,
+      agreements: [],
+      sanctions: [],
+      organizations: ['ООН'],
       allies: [],
     },
 
@@ -193,8 +222,15 @@ function createAICountry(rng, id) {
     id, isPlayer: false,
     name: countryName(rng),
     capital: cityName(rng),
-    flag: { colors: [rnd(rng, ['#2b6cb0','#c53030','#2f855a','#6b46c1','#b7791f','#2c7a7b']), '#e2e8f0'], emblem: rnd(rng, EMBLEMS) },
+    flag: {
+      colors: [
+        rnd(rng, ['#2b6cb0','#c53030','#2f855a','#6b46c1','#b7791f','#2c7a7b']),
+        '#e2e8f0',
+      ],
+      emblem: rnd(rng, EMBLEMS),
+    },
     development: clamp(gdpPerCapitaBase / 45000, 0.05, 1.3),
+
     government: {
       system, ideology,
       corruption: clamp(sys.corruption * rng.range(0.7, 1.3), 0.03, 0.95),
@@ -203,27 +239,61 @@ function createAICountry(rng, id) {
       civilRights: clamp(sys.democracy * rng.range(0.7, 1.2), 0.03, 0.98),
       judiciary: clamp(sys.democracy * rng.range(0.7, 1.2), 0.03, 0.98),
     },
+
     economy: {
       gdp, gdpPerCapita: gdpPerCapitaBase,
-      growth: 2, inflation: rng.range(1.5, 9),
+      growth: 2,
+      inflation: rng.range(1.5, 9),
       unemployment: rng.range(3, 15),
       debt: gdp * rng.range(0.2, 1.1),
       techLevel: clamp(2 + gdpPerCapitaBase / 12000 + rng.range(-1, 1.5), 1, 10),
       economicFreedom: clamp(rng.range(0.3, 0.85), 0.1, 0.95),
+      stateEnterprises: { count: rng.int(10, 60), efficiency: rng.range(0.3, 0.8), revenueAnnual: gdp * 0.02 },
     },
+
     demography: {
       population,
-      birthRate: rng.range(8, 30), deathRate: rng.range(6, 16),
+      birthRate: rng.range(8, 30),
+      deathRate: rng.range(6, 16),
       lifeExpectancy: clamp(55 + gdpPerCapitaBase / 2500, 45, 88),
       education: { index: clamp(30 + gdpPerCapitaBase / 900, 8, 98) },
       health: { index: clamp(28 + gdpPerCapitaBase / 950, 8, 98) },
     },
+
     military: {
       personnel: Math.round(population / rng.range(150, 600)),
       industry: clamp(15 + gdpPerCapitaBase / 1200, 3, 95),
-      readiness: rng.range(30, 85), atWar: false,
+      readiness: rng.range(30, 85),
+      atWar: false,
+      alliances: [],
+      treaties: [],
     },
-    diplomacy: { reputation: rng.range(30, 80), influence: 0, relations: {}, agreements: [], allies: [] },
-    society: { approval: rng.range(35, 70), discontent: rng.range(20, 55) },
+
+    diplomacy: {
+      reputation: rng.range(30, 80),
+      influence: 0,
+      relations: {},
+      agreements: [],
+      allies: [],
+      sanctions: [],
+      organizations: ['ООН'],
+    },
+
+    society: {
+      approval: rng.range(35, 70),
+      discontent: rng.range(20, 55),
+      wellbeing: rng.range(30, 70),
+      protestTimer: 0,
+      scandalTimer: 0,
+    },
+
+    // Поля, которые ожидают views.js / politics.js / engine.js
+    parties: [],
+    laws: [],
+    politicalCapital: rng.range(20, 60),
+    termMonths: sys.term,
+    electionIn: rng.int(12, sys.term),
+    electionsFree: sys.democracy > 0.35,
+    tradeAgreementsCount: 0,
   };
 }

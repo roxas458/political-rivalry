@@ -19,7 +19,8 @@ const NAV = [
   { id: 'society',     label: 'Общество',      ico: '👥' },
   { id: 'diplomacy',   label: 'Дипломатия',    ico: '🌍' },
   { id: 'military',    label: 'Армия',         ico: '⚔️' },
-  { id: 'world',       label: 'Мир',           ico: '🗺️' },
+  { id: 'map',         label: 'Карта',         ico: '🗺️' },
+  { id: 'world',       label: 'Мир',           ico: '🌐' },
   { id: 'statistics',  label: 'Статистика',    ico: '📈' },
 ];
 

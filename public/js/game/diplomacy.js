@@ -1,4 +1,5 @@
 import { clamp } from '../core/util.js';
+import { regionGrowthBonus } from './economy.js';
 
 const IDEOLOGY_AXIS = {
   liberal: 0, socialdemocrat: 1, socialist: 2, centrist: 3, technocratic: 4,
@@ -34,8 +35,9 @@ export function tickDiplomacy(game, rng) {
 
 export function tickAI(ai, rng, game) {
   const e = ai.economy, d = ai.demography;
+  const bonus = regionGrowthBonus(game, ai.id);
   const growth = clamp(
-    rng.gauss(2.2 + (ai.development - 0.5) * -1.5, 0.8), -8, 12);
+    rng.gauss(2.2 + (ai.development - 0.5) * -1.5 + bonus, 0.8), -8, 12);
   e.growth = growth;
   e.gdp = Math.max(1, e.gdp * (1 + growth / 100));
   e.inflation = clamp(e.inflation + rng.gauss(0, 0.25) + (2 - e.inflation) * 0.05, -2, 60);
