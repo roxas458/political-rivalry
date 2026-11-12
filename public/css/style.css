@@ -127,8 +127,31 @@ input[type=range]{width:100%; accent-color:var(--accent); height:28px}
 .modal-foot{padding:12px 16px; border-top:1px solid var(--line); display:flex; justify-content:flex-end; gap:8px; flex-wrap:wrap}
 
 /* ---------- Экран создания государства ---------- */
-.setup{display:flex; align-items:flex-start; justify-content:center; min-height:100vh; padding:20px}
-.setup-card{background:var(--bg2); border:1px solid var(--line); border-radius:14px; padding:22px; width:100%; max-width:720px}
+.setup{
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  padding-top: calc(20px + var(--safe-t));
+  padding-bottom: calc(20px + var(--safe-b));
+  overflow-y: auto;
+  background:
+    radial-gradient(circle at 20% 20%, rgba(79,156,249,.10), transparent 40%),
+    radial-gradient(circle at 80% 80%, rgba(63,185,80,.07), transparent 40%),
+    var(--bg);
+  z-index: 5;
+}
+.setup-card{
+  background: var(--bg2);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 22px;
+  width: 100%;
+  max-width: 720px;
+  margin: auto;
+}
 .field{margin-bottom:14px}
 .field label{display:block; font-size:12.5px; color:var(--muted); margin-bottom:5px}
 .field input,.field select{width:100%; background:var(--bg3); border:1px solid var(--line); color:var(--txt); padding:10px 12px; border-radius:8px; font:inherit; min-height:40px}
@@ -243,7 +266,7 @@ canvas{display:block; width:100%}
 
   /* Экран создания */
   .setup { padding: 12px; align-items: flex-start; }
-  .setup-card { padding: 16px; }
+  .setup-card { padding: 16px; max-width: 100%; }
   .flag-preview { width: 64px; height: 40px; font-size: 18px; }
 
   /* Тосты — по центру снизу */
