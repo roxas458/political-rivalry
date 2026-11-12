@@ -8,14 +8,19 @@ import { LAWS } from './game/laws.js';
 import { ROLES, formCoalition } from './game/politics.js';
 import { person } from './game/names.js';
 import { renderSetup } from './ui/setup.js';
-import { VIEWS, viewGovernment } from './ui/views.js';
-import { card, btn, grid, table } from './ui/components.js';
+import { VIEWS } from './ui/views.js';
+import { card, btn, grid } from './ui/components.js';
 import { applyEffects } from './game/effects.js';
 
 const NAV = [
-  ['dashboard', 'Обзор'], ['government', 'Правительство'], ['economy', 'Экономика'],
-  ['society', 'Общество'], ['diplomacy', 'Дипломатия'], ['military', 'Армия'],
-  ['world', 'Мир'], ['statistics', 'Статистика'],
+  { id: 'dashboard',   label: 'Обзор',         ico: '📊' },
+  { id: 'government',  label: 'Правительство', ico: '🏛️' },
+  { id: 'economy',     label: 'Экономика',     ico: '💰' },
+  { id: 'society',     label: 'Общество',      ico: '👥' },
+  { id: 'diplomacy',   label: 'Дипломатия',    ico: '🌍' },
+  { id: 'military',    label: 'Армия',         ico: '⚔️' },
+  { id: 'world',       label: 'Мир',           ico: '🗺️' },
+  { id: 'statistics',  label: 'Статистика',    ico: '📈' },
 ];
 
 const app = {
@@ -139,12 +144,13 @@ const app = {
     const close = this.modal(h('div', {},
       h('div', { class: 'modal-head' }, 'Формирование коалиции'),
       h('div', { class: 'modal-body' },
-        partners.map(p => h('label', { style: { display: 'block', marginBottom: 8 } },
+        partners.map(p => h('label', { style: { display: 'flex', gap: 10, alignItems: 'center', marginBottom: 12, padding: '8px 0', minHeight: 36 } },
           h('input', {
             type: 'checkbox',
+            style: { width: 20, height: 20, flexShrink: 0 },
             onchange: (e) => e.target.checked ? chosen.add(p.id) : chosen.delete(p.id),
           }),
-          ` ${p.name} — ${p.seats} мест`)),
+          h('span', {}, `${p.name} — ${p.seats} мест`))),
         h('div', { class: 'btn-row', style: { marginTop: 14 } },
           btn('Сформировать', () => {
             const res = formCoalition(g, c, [...chosen]);
@@ -288,18 +294,20 @@ const app = {
         h('span', {}, 'Одобр. ', h('b', {}, pct(c.society.approval))),
         h('span', {}, 'ПК ', h('b', {}, num1(c.politicalCapital)))),
       h('div', { class: 'controls' },
-        btn(this.playing ? '⏸ Пауза' : '▶ Играть', () => this.togglePlay(), this.playing ? '' : 'primary'),
-        btn('+1 мес', () => this.step(1)),
-        btn('+1 год', () => this.step(12)),
-        btn('Сохранить', () => this.save()),
-        btn('Загрузить', () => this.load())));
+        btn(this.playing ? '⏸' : '▶', () => this.togglePlay(), this.playing ? '' : 'primary'),
+        btn('+1м', () => this.step(1)),
+        btn('+1г', () => this.step(12)),
+        btn('💾', () => this.save()),
+        btn('📂', () => this.load())));
 
-    // Сайдбар
+    // Сайдбар / нижняя навигация
     const sidebar = h('nav', { class: 'sidebar' },
-      NAV.map(([id, label]) => h('div', {
-        class: `nav-item ${this.tab === id ? 'active' : ''}`,
-        onclick: () => { this.tab = id; this.render(); },
-      }, label)));
+      NAV.map(item => h('div', {
+        class: `nav-item ${this.tab === item.id ? 'active' : ''}`,
+        onclick: () => { this.tab = item.id; this.render(); },
+      },
+        h('span', { class: 'ico' }, item.ico),
+        h('span', {}, item.label))));
 
     // Контент
     const view = (VIEWS[this.tab] || VIEWS.dashboard)(g, this);
